@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    input,select,button,a{
+        margin:5px
+    }
+    .save-appointment {
+        display: flex;
+        flex-direction: row;
+        height: 98vh;
+    }
+
+    .section {
+        flex: 1;
+        background-color: lightgrey;
+        margin: 5px;
+        padding: 10px;
+        color: black;
+    }
+    .radio-container {
+        margin-bottom: 10px;
+      }
+    
+      .radio-container label {
+        width: 48%;
+      }
+      .service{
+        display:none
+        
+      }
+      #service-details{
+        
+        position: static;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background-color: blue
+        top: 50%;
+        left: 50%;
+      }
+      .hidden{
+        display:none;
+      }
+      th,td{
+       width:100%;
+        padding:20px;
+      }
+</style>
+
+<div class="save-appointment">
+    <div class="section">
+        <!-- First part content here -->
+        <form method='POST' action="{% url 'appointment_booking' %}" id = 'appointment-form'>
+          {% csrf_token %}
+        <h6>1. Add Appointment</h6>
+        <label for="customer">Select customer:</label>
+        <select id="customer" name="customer">
+          <option value="" selected disabled>Select an existing customer</option>
+          {% for existing_customer in existing_customers %}
+            <option value="{{ existing_customer.id }}">{{ existing_customer.name }}</option>
+          {% endfor %}
+        </select>
+        <br>
+        <a class='btn btn-outline-info'>Add New</a>
+        <br>
+        <label for='staff'>Selected Staff</label>
+        <select id ='staff' name='selected_staff'>
+                <option value="{{selected_staff}}">{{selected_staff}}</option>
+                {% for staff_member in staff_members %}
+                    <option value='{{staff_member.id}}'>{{staff_member.name}}</option>
+                {% endfor %}
+        </select><br>
+        <label for='branch'>Selected Branch</label>
+        <select id ='branch' name='selected_branch'>
+                <option value="{{selected_branch}}">{{selected_branch}}</option>
+                {% for branch in branches %}
+                    <option value='{{branch.id}}'>{{branch.name}}</option>
+                {% endfor %}
+        </select><br>
+        <label for='date'>Date:</label>
+        <input type='date' value='{{selected_date}}' name='selected_date'>
+        <br>
+        <label for="time">Time:</label>
+        <input  value = '{{selected_time}}' name='selected_time'><br>
+
+    </div>
+
+    <div class="section">
+        <!-- Second part content here -->
+        <h6>2. Select or Change Services</h6>
+        <div class="radio-container">
+            <label>
+              <input type="radio" name="category" onclick="filterServices(0)">
+              None
+            </label>
+            {% for category in categories %}
+            <label>
+              <input type="radio" name="category" onclick="filterServices('{{ category}}')">
+              {{ category }}
+            </label>
+            <br> 
+            {% endfor %}
+          </div>
+          
+            {% for service in services %}
+            <a href="#" onclick="showServiceDetails('{{service.name}}','{{selected_staff}}','{{selected_time}}','{{service.duration}}','{{service.price}}')" class="service" data-category="{{ service.category}}">{{ service.name }}</a>
+            {% endfor %}
+      
+          <div id="service-details" class="service-details hidden">
+            <h3>Service Details</h3>
+            <p><strong>Name:</strong> <span id="service-name"></span></p>
+            <p><strong>Staff:</strong> <span id="service-staff"></span></p>
+            <p><strong>Start Time:</strong> <span id="service-start-time"></span></p>
+            <p><strong>Duration:</strong> <span id="service-duration"></span></p>
+            <p><strong>Price:</strong> <span id="service-price"></span></p>
+            <a class='btn btn-outline-success' onclick="confirmService()">Confirm</a>
+            <a class = 'btn btn-outline-danger' onclick="hideServiceDetails()">Back</a>
+          </div>
+          <script>
+            function filterServices(categoryId) {
+                var services = document.getElementsByClassName('service');
+            
+                for (var i = 0; i < services.length; i++) {
+                  var service = services[i];
+                  var serviceCategory = service.getAttribute('data-category');
+            
+                  if (serviceCategory === categoryId.toString()) {
+                    service.style.display = 'block';
+                  }
+                   else {
+                    service.style.display = 'none';
+                  }
+                }
+              }
+            function showServiceDetails(name, staff, startTime, duration,price) {
+              var serviceDetails = document.getElementById('service-details');
+              var serviceName = document.getElementById('service-name');
+              var serviceStaff = document.getElementById('service-staff');
+              var serviceStartTime = document.getElementById('service-start-time');
+              var serviceDuration = document.getElementById('service-duration');
+              var servicePrice  =document.getElementById('service-price')
+              console.log(name)
+
+            serviceName.textContent = name;
+            serviceStaff.textContent = staff;
+            serviceStartTime.textContent = startTime;
+            serviceDuration.textContent = duration;
+            servicePrice.textContent = price
+            serviceDetails.classList.remove('hidden');
+        }
+
+            function hideServiceDetails() {
+              var serviceDetails = document.getElementById('service-details');
+              serviceDetails.classList.add('hidden');
+        }
+
+  function confirmService() {
+    // Implement your logic for confirming the service here
+    var serviceDetails = document.getElementById('service-details')
+    serviceDetails.classList.add('hidden')
+    alert('Service confirmed!');
+    var serviceName = document.getElementById('service-name').textContent;
+    var serviceStaff = document.getElementById('service-staff').textContent;
+    var serviceStartTime = document.getElementById('service-start-time').textContent;
+    var serviceDuration = document.getElementById('service-duration').textContent;
+    var servicePrice = document.getElementById('service-price').textContent;
+    
+    // Do something with the retrieved text
+    var appointment_form=document.getElementById('appointment-form')
+    var service_input = document.createElement('input')
+    service_input.className = 'hidden'
+    service_input.value = serviceName
+    service_input.name = 'service-name'
+    service_input.id = serviceName
+    appointment_form.appendChild(service_input)
+    var table=document.getElementById('services-table')
+    var row = table.insertRow()
+    var timeCell = row.insertCell();
+      timeCell.textContent = serviceStartTime;
+
+      var serviceCell = row.insertCell();
+      serviceCell.textContent = serviceName;
+
+      var priceCell = row.insertCell();
+      priceCell.textContent = servicePrice;
+      var actionsCell = row.insertCell()
+      var removeButton = document.createElement("a");
+      removeButton.textContent = "Remove";
+      removeButton.className = "btn btn-danger"
+      removeButton.onclick=function(){
+        var rowIndex = this.parentNode.parentNode.rowIndex; // Get the index of the current row
+        var service_Name = table.rows[rowIndex].cells[1].textContent;
+        var inputField = document.getElementById(service_Name); // Replace "field2" with the ID of the input field you want to delete
+
+        if (inputField) {
+          inputField.remove();
+    }
+        table.deleteRow(rowIndex); 
+
+      }
+      actionsCell.appendChild(removeButton);
+
+    
+
+  }
+
+          </script>
+    </div>
+
+    <div class="section">
+        <!-- Third part content here -->
+        <h6>3. Selected Services</h6>
+        <table id='services-table'>
+          <tr>
+            <th>
+              Time
+            </th>
+            <th>
+              Service
+            </th>
+            <th>
+              Price
+            </th>
+            <th>
+              Actions
+            </th>
+          </tr>
+        </table>
+
+    </div>
+</div>
+
+  
+  
+  
+
+
+    <button class='btn btn-info' type='submit'>Save Appointment</button>
+</form>
+{% endblock content %}
